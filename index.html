@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+	<title>reveal.js</title>
+
+	<link rel="stylesheet" href="dist/reset.css">
+	<link rel="stylesheet" href="dist/reveal.css">
+	<link rel="stylesheet" href="dist/theme/black.css">
+	<link rel="stylesheet" href="app/styles/style.css">
+	<!-- Theme used for syntax highlighted code -->
+	<link rel="stylesheet" href="plugin/highlight/monokai.css">
+</head>
+
+<body>
+	<div class="reveal">
+		<div class="slides">
+			<section>
+				<h1>WEB AUDIO & MIDI APIs</h1>
+				<p>(in browser and beyond)</p>
+			</section>
+
+			<section>
+				<ul>
+					<h2>Our Stack</h2>
+					<li>Browser (Support Web Midi & Audio Apis)</li>
+					<li>Midi Device or Virtual Midi Port</li>
+					<li>DAW (Ableton Live, Fl Studio, etc ...)</li>
+				</ul>
+			</section>
+
+			
+			<section>
+
+				<section>
+					<h2>Simple Synth</h2>
+					<img class="fragment" src="/app/assets/synth_schema.png" alt="synth_schema">
+				</section>
+
+				<section>
+					<p>app.js</p>
+					<pre><code data-trim data-noescape>
+						(() => {
+						  const stateObject = {
+						    isSynthStarted: false,
+						    input: {},
+						    output: {},
+						  };
+						  const synth = createSynth(stateObject);
+						})();
+						</code></pre>
+				</section>
+
+				<section>
+				  <p>Create Simple Synth</p>
+					<pre><code data-trim data-noescape data-line-numbers="2|3-5|6-9|11-15|17-21">
+					  function createSynth(stateObject) {
+					    const context = new AudioContext();
+					    const osc = context.createOscillator();
+					    osc.frequency.value = 220;
+					    osc.type = "sine";
+					    const gain = context.createGain();
+					    osc.connect(gain);
+					    gain.connect(context.destination);
+					    gain.gain.value = 0;
+					    
+					    context.addEventListener("statechange", () => {
+					  	  if (context.state === "running") {
+					  	  	stateObject.isSynthStarted = true;
+					  	  }
+					    });
+					    
+					    return {
+					  	  context,
+					  	  osc,
+					  	  gain,
+					    };
+					  }</code></pre>
+				</section>
+
+				<section>
+					<pre><code data-trim data-noescape>
+					function handlePlay(synth, stateObject) {
+					  const playButton = document.querySelector(".play-btn");
+					  playButton.addEventListener("click", () => {
+					    if (!stateObject.isSynthStarted
+						  && synth.gain.gain.value === 0) {
+					      synth.osc.start(0);
+					    }
+					    synth.gain.gain.setTargetAtTime(
+						    1,
+						    synth.context.currentTime,
+						    0.001
+					    );
+					  });
+					}</code></pre>
+				</section>
+
+				<section>
+					<pre><code data-trim data-noescape>
+					  function handlePause(synth) {
+					    const pauseButton = document.querySelector(".pause-btn");
+					    pauseButton.addEventListener("click", () => {
+					  	const curTime = synth.context.currentTime;
+					        synth.gain.gain.setTargetAtTime(0, curTime, 0.01);
+					        synth.osc.stop(1);
+					        stateObject.isSynthStarted = false;
+					    });
+					  }
+				   </code></pre>
+				</section>
+
+				<section>
+					<pre><code data-trim data-noescape>
+					  function handleInput(synth) {
+					    const slider = document.getElementById("range");
+					    const hz = document.querySelector('.range-hz');
+					    slider.addEventListener("input", () => {
+					      synth.osc.frequency.value = slider.value;
+					      hz.textContent = `${slider.value} hz`;
+					    });
+					  }
+					</code></pre>
+				</section>
+
+				<section>
+					<div class="synth-controls">
+						<div class="synth-control-buttons">
+							<button class="btn-style synth-play-btn">Play</button>
+							<button class="btn-style synth-pause-btn">Pause</button>
+						</div>
+						<div class="synth-range-wrapper">
+							<span class="synth-range-hz">220 hz</span>
+							<input type="range" id="synth-range" name="frequency" min="45" max="1000" value="220" step="1">
+						</div>
+					</div>
+				</section>
+
+				<section>
+					<p>index.html</p>
+					<pre><code data-trim data-escape>
+						<div class="synth-controls">
+							<div class="synth-control-buttons">
+								<button class="btn-style synth-play-btn">Play</button>
+								<button class="btn-style synth-pause-btn">Pause</button>
+							</div>
+							<div class="synth-range-wrapper">
+								<span class="synth-range-hz">220 hz</span>
+								<input type="range" id="synth-range" name="frequency" min="45" max="1000" value="220" step="1">
+							</div>
+						</div>
+					</code></pre>
+				</section>
+
+				<section>
+					<pre><code data-trim data-escape>
+						(() => {
+						  const stateObject = {
+						    isSynthStarted: false,
+						    input: {},
+						    output: {},
+						  };
+						  const synth = createSynth(stateObject);
+						  handlePlay(synth, stateObject);
+						  handlePause(synth, stateObject);
+						  handleInput(synth)
+						})();
+					</code></pre>
+				</section>
+
+			</section>
+
+			<section>
+				<section>
+					<h2>Midi I/O</h2>
+				</section>
+
+				<section>
+					<h3>What is Midi ?</h3>
+					<p class="fragment">The way instruments can communicate with each other (throught messages)</p>
+				</section>
+
+				<section>
+					<h3>What is Midi message ?</h3>
+					<p class="fragment">Binary instructions</p>
+				</section>
+
+				
+				<section>
+					<h3>Typical Midi Message</h3>
+					<img class="fragment" src="/app/assets/midi_message.png" alt="midi_message">
+				</section>
+
+			</section>
+
+			<section>
+				<section>
+					<h2>Virtual Midi Port</h2>
+				</section>
+
+				<section data-markdown>
+					<textarea data-template>
+						### Options
+
+						1. [loopMIDI](https://www.tobias-erichsen.de/software/loopmidi.html)
+						2. [LoopBe1](https://www.nerds.de/en/loopbe1.html)
+					  </textarea>
+				</section>
+
+				<section>
+					<img src="/app/assets/send_message.png" alt="send_message">
+				</section>
+			</section>
+			
+			<section>
+				<h2>Get I/O</h2>
+				<p>app.js</p>
+				<pre><code data-trim data-escape data-line-numbers="2|3-4|6-7|11-16">
+					async function getMidiDevices(synth, stateObject) {
+					  const midi = await navigator.requestMIDIAccess();
+					  const inputs = midi.inputs;
+					  const outputs = midi.outputs;
+					  
+					  getInOut(inputs, "LoopBe Internal MIDI", stateObject);
+					  getInOut(outputs, "LoopBe Internal MIDI", stateObject);
+					}
+					  
+					function getInOut(object, name, stateObject) {
+					  object.forEach((value, key) => {
+					      if (value.name === name) {
+					          stateObject[value.type] = object.get(key);
+					      }
+					  });
+					}
+				</code></pre>
+
+			</section>
+		</div>
+	</div>
+
+	<script src="dist/reveal.js"></script>
+	<script src="plugin/notes/notes.js"></script>
+	<script src="plugin/markdown/markdown.js"></script>
+	<script src="plugin/highlight/highlight.js"></script>
+	<script src="app/scripts/synth.js"></script>
+	<script>
+		// More info about initialization & config:
+		// - https://revealjs.com/initialization/
+		// - https://revealjs.com/config/
+		Reveal.initialize({
+			hash: true,
+
+			// Learn about plugins: https://revealjs.com/plugins/
+			plugins: [RevealMarkdown, RevealHighlight, RevealNotes]
+		});
+	</script>
+</body>
+
+</html>
