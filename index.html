@@ -215,7 +215,9 @@
 				</section>
 			</section>
 			
+
 			<section>
+			  <section>
 				<h2>Get I/O</h2>
 				<p>app.js</p>
 				<pre><code data-trim data-escape data-line-numbers="2|3-4|6-7|11-16">
@@ -236,7 +238,118 @@
 					  });
 					}
 				</code></pre>
+			  </section>
 
+			  <section>
+				<p>Console Output</p>
+				<img src="/app/assets/midi_input.png" alt="midi_input">
+			  </section>
+
+		    </section>
+
+			<section>
+				<section>
+					<h2>Keyboard</h2>
+					<ul>
+						<li class="fragment">Change synth frequency && volume</li>
+						<li class="fragment">Send Midi Data</li>
+					</ul>
+				</section>
+
+				<section>
+						<div class="synth-controls">
+							<div class="synth-control-buttons">
+								<button class="btn-style synth-2-play-btn">Play</button>
+								<button class="btn-style synth-2-pause-btn">Pause</button>
+							</div>
+							<div class="synth-range-wrapper">
+								<span class="synth-2-range-hz">220 hz</span>
+								<input type="range" id="synth-2-range" name="frequency" min="45" max="1000" value="220" step="1">
+							</div>
+							<div class="piano"></div>
+						</div>
+				</section>
+
+			</section>
+
+			<section>
+			  <section>
+			  	<h2>Send Midi Data</h2>
+			  	<pre><code data-trim data-escape>
+			  		function sendMidiData(stateObject, message = [], isInterval = false, time = 0) {
+			  		  const targetOutput = stateObject.output;
+			  		  if (isInterval) {
+			  		    setInterval(() => {
+			  		    targetOutput.send(message);
+			  		    }, time);
+			  		  } else {
+			  		    targetOutput.send(message);
+			  		  }
+			  		}
+			  	</code></pre>
+			  </section>
+
+			  <section>
+			  	<h3>Find frequency</h3>
+			  	<pre><code data-trim data-escape> const frequency = Math.floor(
+					440 * 2 ** ((number - 69) / 12)
+				);
+				</code></pre>
+			  </section>
+
+			</section>
+
+			<section>
+				<h2>Receive Midi Data</h2>
+				<pre><code data-trim data-escape data-line-numbers="2-4|6|7-8|9-11|12-19|20-24">
+					function getMidiData(synth, stateObject) {
+					  const targetInput = stateObject.input;
+					  const slider = document.getElementById("range");
+					  const hz = document.querySelector('.range-hz');
+					  
+					  targetInput.addEventListener("midimessage", (message) => {
+					    const [isOn, note, velocity] = message.data;
+					    const frequency = Math.floor(440 * 2 ** ((note - 69) / 12));
+					    slider.value = frequency;
+					    hz.textContent = `${slider.value} hz`;
+					    synth.osc.frequency.value = slider.value;
+					    if (isOn === 128) {
+					      synth.gain.gain.setTargetAtTime(
+						      0,
+						      synth.context.currentTime,
+						      0.01
+						    );
+					      return;
+					    }
+					    synth.gain.gain.setTargetAtTime(
+					      velocity / 100,
+					      synth.context.currentTime,
+					      0.001
+					    );
+					  });
+					}
+				</code></pre>
+			</section>
+
+			<section>
+				<h2>Thanks for watching!</h2>
+				<ul>Usefull Links:
+					<li>
+						<a href="">Full Project</a>
+					</li>
+					<li>
+						<a href="https://www.music.mcgill.ca/~gary/307/week1/node28.html">Midi/Frequency Conversion</a>
+					</li>
+					<li>
+						<a href="https://en.wikipedia.org/wiki/Piano_key_frequencies">Piano key frequencies</a>
+					</li>
+					<li>
+						<a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API">Web Audio API</a>
+					</li>
+					<li>
+						<a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_MIDI_API">Web Midi API</a>
+					</li>
+				</ul>
 			</section>
 		</div>
 	</div>
@@ -246,6 +359,7 @@
 	<script src="plugin/markdown/markdown.js"></script>
 	<script src="plugin/highlight/highlight.js"></script>
 	<script src="app/scripts/synth.js"></script>
+	<script src="app/scripts/synth_plus_piano.js"></script>
 	<script>
 		// More info about initialization & config:
 		// - https://revealjs.com/initialization/

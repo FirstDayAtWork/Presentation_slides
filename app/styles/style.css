@@ -88,12 +88,14 @@ body {
     padding: 0 10px;
 }
 
-#synth-range {
+#synth-range,
+#synth-2-range {
     width: 400px;
     accent-color: var(--templateLit-color);
 }
 
-#synth-range:hover {
+#synth-range:hover,
+#synth-2-range:hover {
     accent-color: #393cdd;
 }
 

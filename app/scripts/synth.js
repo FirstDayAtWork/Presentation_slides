@@ -12,7 +12,7 @@ function handlePause(synth, stateObject) {
   const pauseButton = document.querySelector(".synth-pause-btn");
   pauseButton.addEventListener("click", () => {
     synth.gain.gain.setTargetAtTime(0, synth.context.currentTime, 0.01);
-    synth.osc.stop(1);
+    synth.osc.stop(2);
     stateObject.isSynthStarted = false;
   });
 }
