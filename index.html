@@ -240,11 +240,6 @@
 				</code></pre>
 			  </section>
 
-			  <section>
-				<p>Console Output</p>
-				<img src="./app/assets/midi_input.png" alt="midi_input">
-			  </section>
-
 		    </section>
 
 			<section>
@@ -276,15 +271,9 @@
 			  <section>
 			  	<h2>Send Midi Data</h2>
 			  	<pre><code data-trim data-escape>
-			  		function sendMidiData(stateObject, message = [], isInterval = false, time = 0) {
-			  		  const targetOutput = stateObject.output;
-			  		  if (isInterval) {
-			  		    setInterval(() => {
-			  		    targetOutput.send(message);
-			  		    }, time);
-			  		  } else {
-			  		    targetOutput.send(message);
-			  		  }
+			  		function sendMidiData(stateObject, message = []) {
+			  		  const output = stateObject.output;
+			  		  output.send(message);
 			  		}
 			  	</code></pre>
 			  </section>
@@ -301,18 +290,14 @@
 
 			<section>
 				<h2>Receive Midi Data</h2>
-				<pre><code data-trim data-escape data-line-numbers="2-4|6|7-8|9-11|12-19|20-24">
+				<pre><code data-trim data-escape data-line-numbers="2|4|5-6|7|8-15|16-21">
 					function getMidiData(synth, stateObject) {
 					  const targetInput = stateObject.input;
-					  const slider = document.getElementById("range");
-					  const hz = document.querySelector('.range-hz');
-					  
+
 					  targetInput.addEventListener("midimessage", (message) => {
 					    const [isOn, note, velocity] = message.data;
 					    const frequency = Math.floor(440 * 2 ** ((note - 69) / 12));
-					    slider.value = frequency;
-					    hz.textContent = `${slider.value} hz`;
-					    synth.osc.frequency.value = slider.value;
+					    synth.osc.frequency.value = frequency;
 					    if (isOn === 128) {
 					      synth.gain.gain.setTargetAtTime(
 						      0,
