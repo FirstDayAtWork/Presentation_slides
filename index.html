@@ -38,26 +38,8 @@
 				<section>
 					<h2>Simple Synth</h2>
 					<img class="fragment" src="./app/assets/synth_schema.png" alt="synth_schema">
-				</section>
-
-				<section>
-					<p>app.js</p>
-					<pre><code data-trim data-noescape>
-						(() => {
-						  const stateObject = {
-						    isSynthStarted: false,
-						    input: {},
-						    output: {},
-						  };
-						  const synth = createSynth(stateObject);
-						})();
-						</code></pre>
-				</section>
-
-				<section>
-				  <p>Create Simple Synth</p>
-					<pre><code data-trim data-noescape data-line-numbers="2|3-5|6-9|11-15|17-21">
-					  function createSynth(stateObject) {
+					<pre><code  class="fragment" data-trim data-noescape data-line-numbers="2|3-5|6-9|11-15">
+					  function createSynth() {
 					    const context = new AudioContext();
 					    const osc = context.createOscillator();
 					    osc.frequency.value = 220;
@@ -66,12 +48,6 @@
 					    osc.connect(gain);
 					    gain.connect(context.destination);
 					    gain.gain.value = 0;
-					    
-					    context.addEventListener("statechange", () => {
-					  	  if (context.state === "running") {
-					  	  	stateObject.isSynthStarted = true;
-					  	  }
-					    });
 					    
 					    return {
 					  	  context,
@@ -82,51 +58,27 @@
 				</section>
 
 				<section>
+					<h2>Change Synth Volume</h2>
+					<p>Basic approach</p>
 					<pre><code data-trim data-noescape>
-					function handlePlay(synth, stateObject) {
-					  const playButton = document.querySelector(".play-btn");
-					  playButton.addEventListener("click", () => {
-					    if (!stateObject.isSynthStarted
-						  && synth.gain.gain.value === 0) {
-					      synth.osc.start(0);
-					    }
-					    synth.gain.gain.setTargetAtTime(
-						    1,
-						    synth.context.currentTime,
-						    0.001
-					    );
-					  });
-					}</code></pre>
-				</section>
-
-				<section>
-					<pre><code data-trim data-noescape>
-					  function handlePause(synth) {
-					    const pauseButton = document.querySelector(".pause-btn");
-					    pauseButton.addEventListener("click", () => {
-					  	const curTime = synth.context.currentTime;
-					        synth.gain.gain.setTargetAtTime(0, curTime, 0.01);
-					        synth.osc.stop(1);
-					        stateObject.isSynthStarted = false;
-					    });
-					  }
-				   </code></pre>
-				</section>
-
-				<section>
-					<pre><code data-trim data-noescape>
-					  function handleInput(synth) {
-					    const slider = document.getElementById("range");
-					    const hz = document.querySelector('.range-hz');
-					    slider.addEventListener("input", () => {
-					      synth.osc.frequency.value = slider.value;
-					      hz.textContent = `${slider.value} hz`;
-					    });
-					  }
+						synth.gain.gain.value = 1
 					</code></pre>
+					<p class="fragment">Changes volume instantly (Adds annoying clicks)</p>
 				</section>
 
 				<section>
+					<p>The Right Way</p>
+					<pre><code data-trim data-noescape>
+					    synth.gain.gain.setTargetAtTime(
+						      1,
+						      synth.context.currentTime,
+						      0.001
+						   )</code></pre>
+					<p class="fragment">Gradually increase/decrease volume (Prevent clicks)</p>
+				</section>
+
+				<section>
+					<h2>Example</h2>
 					<div class="synth-controls">
 						<div class="synth-control-buttons">
 							<button class="btn-style synth-play-btn">Play</button>
@@ -137,38 +89,6 @@
 							<input type="range" id="synth-range" name="frequency" min="45" max="1000" value="220" step="1">
 						</div>
 					</div>
-				</section>
-
-				<section>
-					<p>index.html</p>
-					<pre><code data-trim data-escape>
-						<div class="synth-controls">
-							<div class="synth-control-buttons">
-								<button class="btn-style synth-play-btn">Play</button>
-								<button class="btn-style synth-pause-btn">Pause</button>
-							</div>
-							<div class="synth-range-wrapper">
-								<span class="synth-range-hz">220 hz</span>
-								<input type="range" id="synth-range" name="frequency" min="45" max="1000" value="220" step="1">
-							</div>
-						</div>
-					</code></pre>
-				</section>
-
-				<section>
-					<pre><code data-trim data-escape>
-						(() => {
-						  const stateObject = {
-						    isSynthStarted: false,
-						    input: {},
-						    output: {},
-						  };
-						  const synth = createSynth(stateObject);
-						  handlePlay(synth, stateObject);
-						  handlePause(synth, stateObject);
-						  handleInput(synth)
-						})();
-					</code></pre>
 				</section>
 
 			</section>
@@ -271,8 +191,7 @@
 			  <section>
 			  	<h2>Send Midi Data</h2>
 			  	<pre><code data-trim data-escape>
-			  		function sendMidiData(stateObject, message = []) {
-			  		  const output = stateObject.output;
+			  		function sendMidiData(output, message = []) {
 			  		  output.send(message);
 			  		}
 			  	</code></pre>
@@ -290,15 +209,15 @@
 
 			<section>
 				<h2>Receive Midi Data</h2>
-				<pre><code data-trim data-escape data-line-numbers="2|4|5-6|7|8-15|16-21">
-					function getMidiData(synth, stateObject) {
-					  const targetInput = stateObject.input;
-
-					  targetInput.addEventListener("midimessage", (message) => {
-					    const [isOn, note, velocity] = message.data;
+				<pre><code data-trim data-escape data-line-numbers="2|4-6|8-15|16-21">
+					function getMidiData(synth, input) {
+					  input.addEventListener("midimessage", (message) => {
+						
+					    const [status, note, velocity] = message.data;
 					    const frequency = Math.floor(440 * 2 ** ((note - 69) / 12));
 					    synth.osc.frequency.value = frequency;
-					    if (isOn === 128) {
+
+					    if (status === 128) {
 					      synth.gain.gain.setTargetAtTime(
 						      0,
 						      synth.context.currentTime,
@@ -306,6 +225,7 @@
 						    );
 					      return;
 					    }
+
 					    synth.gain.gain.setTargetAtTime(
 					      velocity / 100,
 					      synth.context.currentTime,
